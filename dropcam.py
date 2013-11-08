@@ -59,7 +59,9 @@ def nexus_request(url, params):
 
 def jpg_request(url, params):
     response = requests.get(url, params=params, cookies=login.get_cookiejar())
-    return data.data()
+    if not response.ok:
+      return None
+    return response.content
 
 class Dropcam(object):
     def __init__(self, username=None, password=None):
@@ -132,5 +134,8 @@ class Camera(object):
         """
         f = open(path, "wb")
         response = self.get_image(width, time)
-        f.write(response)
-        f.close()
+        if response:
+            f.write(response)
+            f.close()
+        else:
+            print("Failed save_image: {0} is not available".format(self))
