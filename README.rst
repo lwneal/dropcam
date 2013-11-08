@@ -6,7 +6,7 @@ Usage
 Basic usage ::
 
     >>> from dropcam import Dropcam
-    >>> d = Dropcam(username, password)
+    >>> d = Dropcam()
     >>> c = d.cameras()[0]
     >>> c.save_image("image.jpg")
 
