@@ -179,18 +179,21 @@ class Camera(object):
         else:
             print("Failed save_image: {0} is not available".format(self))
 
-    def time_lapse(self, filename='timelapse', start_time=None, end_time=None, category=None, frames_per_event=9, max_events=25):
+    def time_lapse(self, filename='timelapse', start_time=None, end_time=None, category=None, frames_per_event=9, max_events=25, frames_per_hour=4):
         """
         Example time-lapse generator
         Requires FFMPEG
+
+        Makes a constant framerate time-lapse at frames_per_hour, which 'slows down'
+        by adding frames at each new event it comes to
         """
         if os.system('ffmpeg -version') is not 0:
-          print("FFMPEG is not installed! Install it:")
-          if 'Darwin' in os.uname():
-            print("\tbrew install ffmpeg")
-          else:
-            print("\thttp://www.ffmpeg.org/download.html")
-          return None
+            print("FFMPEG is not installed! Install it:")
+            if 'Darwin' in os.uname():
+                print("\tbrew install ffmpeg")
+            else:
+                print("\thttp://www.ffmpeg.org/download.html")
+            return None
 
         events = self.events()
         if start_time:
@@ -203,10 +206,20 @@ class Camera(object):
 
         #  Time-lapse a single category (eg. only detected humans)
         if category:
-          events = [e for e in events if e.cuepoint_category_id == category]
+            events = [e for e in events if e.cuepoint_category_id == category]
 
         if max_events:
-          events = events[:max_events]
+            events = events[:max_events]
+
+        if start_time is None:
+            start_time = float(events[0].time)
+
+        if end_time is None:
+            end_time = float(events[-1].time)
+
+        duration = end_time - start_time
+        seconds_between_frames = duration * frames_per_hour / 60.0 / 60.0
+        frame_times = [start_time + n * seconds_between_frames for n in range(int(duration / seconds_between_frames))]
 
         if not events:
             print("Error generating time-lapse: no events available")
@@ -215,17 +228,23 @@ class Camera(object):
             print("Generating time-lapse from {0} events".format(len(events)))
 
         f_out = open('{0}.mjpeg'.format(filename), 'w')
-        for e in events:
-            jpg_stream = e.get_clip(num_frames=frames_per_event)
-            if jpg_stream:
-              print("Downloaded {0} bytes for event {1}".format(len(jpg_stream), e.id))
-              f_out.write(jpg_stream)
+        while frame_times and events:
+            if frame_times[0] < events[0].time:
+                f = frame_times[0]
+                frame_times = frame_times[1:]
+                jpg_stream = self.get_image(time=f)
             else:
-              print("Skipping event {0}".format(e.id))
+                e = events[0]
+                events = events[1:]
+                jpg_stream = events[0].get_clip(num_frames=frames_per_event)
+            if jpg_stream:
+                print("Writing {0} Bytes".format(len(jpg_stream)))
+                f_out.write(jpg_stream)
+            else:
+                print("Skipping event {0}".format(e.id))
         f_out.close()
 
         res = os.system('ffmpeg -y -i {0}.mjpeg {0}.mp4'.format(filename))
         if res:
             print("Warning: ffmpeg returned error code generating .mp4 video")
         print("Time-Lapse Complete")
-
