@@ -20,9 +20,9 @@ try:
   events = cam.events()[:20]
   print("Got {0} events from camera {1}".format(len(events), cam))
 
-  timelapse = cam.time_lapse()
+  timelapse = cam.time_lapse(frames_per_hour=0.1, filename="cheetah_test")
   import os
-  os.system("open timelapse.mp4")
+  os.system("open cheetah_test.mp4")
 
   print("Tests Complete, no errors!")
 except Exception as ex:

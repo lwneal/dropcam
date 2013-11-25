@@ -218,14 +218,15 @@ class Camera(object):
             end_time = float(events[-1].time)
 
         duration = end_time - start_time
-        seconds_between_frames = duration * frames_per_hour / 60.0 / 60.0
+        seconds_between_frames = duration / (frames_per_hour * 60 * 60)
         frame_times = [start_time + n * seconds_between_frames for n in range(int(duration / seconds_between_frames))]
 
         if not events:
             print("Error generating time-lapse: no events available")
             return
         else:
-            print("Generating time-lapse from {0} events".format(len(events)))
+            print("Generating time-lapse from {0} events and {1} still frames".format(len(events), len(frame_times)))
+
 
         f_out = open('{0}.mjpeg'.format(filename), 'w')
         while frame_times and events:
