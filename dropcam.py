@@ -60,7 +60,12 @@ def apiv1_request(url, params):
     if not response.ok:
         print("Request failed: {0}".format(response.content))
         return None
-    return response.json()['items'][0]
+    response_dict = response.json()
+    if response_dict['status'] != 0 or not response_dict['items']:
+        print(response_dict)
+        return None
+    else:
+        return response_dict['items'][0]
 
 def nexus_json_request(url, params):
     response = requests.get(url=url, params=params, cookies=login.get_cookiejar())
