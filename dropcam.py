@@ -47,6 +47,7 @@ __author__ = "Ryan Galloway <ryan@rsgalloway.com>"
 
 # Please use /api/v1/ requests sparingly
 _CAMERAS_PATH = "https://www.dropcam.com/api/v1/cameras.get_visible"
+_PROPERTIES_PATH = "https://www.dropcam.com/api/v1/dropcams.set_property"
 
 # NexusAPI provides useful metadata for CVR-subscribed Dropcams
 # NOTE: Always batch multi-image requests using get_images/get_event_clip
@@ -183,6 +184,25 @@ class Camera(object):
             f.close()
         else:
             print("Failed save_image: {0} is not available".format(self))
+    
+    def set_dptz(self, width=1.0, height=1.0, center_x=0.5, center_y=0.5):
+        """
+        Sets camera Digital Pan Tilt Zoom to a given rectangle
+
+        :param width: Float 0.1 to 1: horizontal scale factor
+        :param height: Float 0.1 to 1: vertical scale factor
+        :param center_x: Float 0 to 1: horizontal center position
+        :param center_y: Float 0 to 1: vertical center position
+
+        WARNING: Invalid DPTZ settings WILL break the video stream!
+        """
+        dptz_setting = ','.join([str(f) for f in [width, height,center_x, center_y]])
+        params = {
+            'uuid': self.uuid,
+            'key': 'dptz.state', 
+            'value': dptz_setting
+        }
+        response = apiv1_request(_PROPERTIES_PATH, params)
 
     def time_lapse(self, filename='timelapse', start_time=None, end_time=None, category=None, frames_per_event=9, max_events=25, frames_per_hour=4):
         """
